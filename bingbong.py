@@ -1,2 +1,4 @@
+string = ""
 for x in range(1000)
-  print("bingbong")
+  string += "bingbong"
+print(string)
