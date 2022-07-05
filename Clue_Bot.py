@@ -121,7 +121,7 @@ class File:
     @classmethod
     def update(cls):
         for (card, status) in card_statuses.items():
-            if status != 'Unknown':
+            if len(status) == 1 and status[0] != 'File':
                 if card in culprit_cards and card in cls.possible_culprits:
                     cls.possible_culprits.remove(card)
 
@@ -130,8 +130,9 @@ class File:
 
                 elif card in cls.possible_rooms:
                     cls.possible_rooms.remove(card)
-                    
+
             if len(status) == 1 and status[0] == 'File':
+                global true_culprit, true_weapon, true_room
                 if card in culprit_cards:
                     true_culprit = card
                 if card in weapon_cards:
