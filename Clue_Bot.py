@@ -130,6 +130,14 @@ class File:
 
                 elif card in cls.possible_rooms:
                     cls.possible_rooms.remove(card)
+                    
+            if len(status) == 1 and status[0] == 'File':
+                if card in culprit_cards:
+                    true_culprit = card
+                if card in weapon_cards:
+                    true_weapon = card
+                if card in room_cards:
+                    true_room = card
 
         if len(cls.possible_culprits) == 1:
             true_culprit = cls.possible_culprits[0]
