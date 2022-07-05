@@ -164,6 +164,7 @@ def is_player(p):
 
 def setup():
     players = []
+    global card_statuses
 
     for p in range(int(input('Number of Players: '))):
         p = input('Add Player: ')
@@ -184,6 +185,10 @@ def setup():
         else:
             print(f'{c} is not a recognized card. Ensure correct spelling.')
         c = input('Your Next Card: ')
+
+    for c in (*culprit_cards, *weapon_cards, *room_cards):
+        if c not in players[0].cards:
+            card_statuses[c].remove(players[0].player_name)
 
     return players
 
