@@ -47,7 +47,10 @@ def execute_command(command: str) -> None:
         elif args[0] == 'cards':
             print_statuses()
 
-    main_loop()
+    if setup_complete:
+        main_loop()
+    else:
+        main()
 
 
 def get_input(__prompt: object) -> str:
@@ -314,9 +317,11 @@ def print_statuses() -> None:
 
 
 def main() -> None:
-    global players
+    global players, setup_complete
+    setup_complete = False
     players = setup()
     print('\n')
+    setup_complete = True
     main_loop()
 
 
