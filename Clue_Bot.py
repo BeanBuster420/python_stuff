@@ -1,11 +1,28 @@
 from copy import copy
 from collections import OrderedDict
+from typing import Union
 
-culprit_cards = ('White', 'Green', 'Mustard', 'Plum', 'Scarlet', 'Peacock')
-weapon_cards = ('Candlestick', 'Knife', 'Rope', 
-                'Lead Pipe', 'Revolver', 'Wrench')
-room_cards = ('Ballroom', 'Billiard Room', 'Conservatory', 'Dining Room', 
-              'Kitchen', 'Hall', 'Library', 'Lounge', 'Study')
+culprit_cards = tuple(name.title() for name in ('White', 'Green', 'Mustard', 
+                                           'Plum', 'Scarlet', 'Peacock'))
+weapon_cards = tuple(name.title() for name in ('Candlestick', 'Knife', 'Rope', 
+                                          'Lead Pipe', 'Revolver', 'Wrench'))
+room_cards = tuple(name.title() for name in ('Ballroom', 'Billiard Room', 
+                                        'Conservatory', 'Dining Room', 
+                                        'Kitchen', 'Hall', 'Library', 
+                                        'Lounge', 'Study'))
+              
+all_cards = (*culprit_cards, *weapon_cards, *room_cards)
+
+commands = ('help', 'show')
+
+help_command = '''
+List of valid commands:
+
+"help" - Prints the string you are reading right now.
+
+"show" - Used to show guesses, players, or cards.
+Syntax: "show players|guesses|cards"
+'''
 
 true_culprit = 'Unknown'
 true_weapon = 'Unknown'
@@ -15,12 +32,39 @@ guess_list = []
 
 card_statuses = OrderedDict()
 
-def card_statuses_setup(players):
-    for card in (*culprit_cards, *weapon_cards, *room_cards):
+def execute_command(command: str) -> None:
+    base_command, *args = command.split(' ')
+    if base_command == 'help':
+        pass
+
+    if base_command == 'show':
+        if args[0] == 'guesses':
+            for index, guess in enumerate(guess_list, 1):
+                print(index, guess)
+            print('')
+        elif args[0] == 'players':
+            print(f'Players: {", ".join(players)}')
+        elif args[0] == 'cards':
+            print_statuses()
+
+    main_loop()
+
+
+def get_input(__prompt: object) -> str:
+    input_value = input(__prompt)
+    if input_value.split(' ')[0] not in commands:
+        return input_value
+    else:
+        execute_command(input_value)
+
+
+
+def card_statuses_setup(players: list) -> None:
+    for card in all_cards:
         card_statuses[card] = [*(p.player_name for p in players), 'File']
 
 
-def update():
+def update() -> None:
     for player in players:
         for card in player.cards:
             card_statuses[card] = [player.player_name]
@@ -51,12 +95,15 @@ def update():
 
 
 class Player:
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         self.player_name = name
         self.guesses = []
         self.cards = set()
 
-    def guess(self, guess):
+    def __str__(self) -> str:
+        return self.player_name
+
+    def guess(self, guess: 'Guess') -> bool | None:
         self.guesses.append(guess)
 
         if guess.supplier == None:
@@ -83,9 +130,13 @@ class Player:
         supplier_index = players.index(guess.supplier)
         guesser_index = players.index(self)
 
-        if supplier_index != (guesser_index+1 % len(players)):
-            skipped_players = players[slice((guesser_index + 1), 
-                                            supplier_index or len(players))]
+        if supplier_index != (guesser_index + 1) % len(players):
+            skipped_players = []
+            next_player_index = guesser_index + 1
+            while next_player_index != supplier_index:
+                skipped_players.append(players[next_player_index])
+                next_player_index = (next_player_index + 1) % len(players)
+
             for skipped_player in skipped_players:
                 for card in (guess.culprit, guess.weapon, guess.room):
                     if skipped_player.player_name in card_statuses[card]:
@@ -96,7 +147,10 @@ class Player:
 
 
 class Guess:
-    def __init__(self, culprit, weapon, room, supplier, card_shown='Unknown'):
+    def __init__(self, 
+                 guesser: 'Player', culprit: str, weapon: str, room: str, 
+                 supplier: 'Player', card_shown: str = 'Unknown') -> None:
+        self.guesser = guesser
         self.culprit = culprit
         self.weapon = weapon
         self.room = room
@@ -106,6 +160,11 @@ class Guess:
         if self.card_shown != 'Unknown':
             card_statuses[card_shown] = list()
             card_statuses[card_shown].append(self.supplier.player_name)
+    
+    def __str__(self) -> str:
+        c, w, r, g, cs, s = (self.culprit, self.weapon, self.room, 
+                             self.guesser, self.card_shown, self.supplier)
+        return f'{c}, {w}, {r}, guessed by {g}, card {cs} supplied by {s}'
 
 
 class File:
@@ -119,7 +178,7 @@ class File:
     }
 
     @classmethod
-    def update(cls):
+    def update(cls) -> dict:
         for (card, status) in card_statuses.items():
             if len(status) == 1 and status[0] != 'File':
                 if card in culprit_cards and card in cls.possible_culprits:
@@ -159,56 +218,56 @@ class File:
         return cls.contents
 
 
-def is_card(card):
-    if card in (*culprit_cards, *weapon_cards, *room_cards):
+def is_card(card: str) -> bool:
+    if card in all_cards:
         return True
     return False
 
 
-def is_player(p):
+def is_player(p: Union[str, Player]) -> bool:
     if p in (*(p.player_name for p in players), *(p for p in players)):
         return True
     return False
 
 
-def setup():
+def setup() -> list:
     players = []
     global card_statuses
 
-    for p in range(int(input('Number of Players: '))):
-        p = input('Add Player: ')
+    for p in range(int(get_input('Number of Players: '))):
+        p = get_input('Add Player: ')
         player_obj = Player(p)
         if p not in globals().keys():
             globals()[p] = player_obj
         else:
-            raise Exception(f'Player name cannot be the same '
-                            f'as a global variable. ({p}, {globals()[p]})')
+            raise Exception('Player name cannot be the same '
+                           f'as a global variable. ({p}, {globals()[p]})')
         players.append(player_obj)
 
     card_statuses_setup(players)
 
-    c = input('Your First Card: ')
+    c = get_input('Your First Card: ').title()
     while c:
         if is_card(c):
             players[0].cards.add(c)
         else:
             print(f'{c} is not a recognized card. Ensure correct spelling.')
-        c = input('Your Next Card: ')
+        c = get_input('Your Next Card: ').title()
 
-    for c in (*culprit_cards, *weapon_cards, *room_cards):
+    for c in all_cards:
         if c not in players[0].cards:
             card_statuses[c].remove(players[0].player_name)
 
     return players
 
 
-def get_guess():
-    guesser = input('Guesser: ')
+def get_guess() -> OrderedDict | str:
+    guesser = get_input('Guesser: ')
     if not is_player(guesser):
         return 'Not a valid player.'
-    guesser = globals()[guesser]
+    guesser = globals()[guesser] # guesser is now a Player object
 
-    g_cards = [c for c in input('Culprit, Weapon, Room: ').split(', ')]
+    g_cards = [c.title() for c in get_input('Culprit, Weapon, Room: ').split(', ')]
     if len(g_cards) != 3:
         return 'Must provide three cards.'
 
@@ -220,7 +279,7 @@ def get_guess():
     if r not in room_cards:
         return f'"{r}" is not a recognized room.'
     
-    supp = input('Supplier or "None": ')
+    supp = get_input('Supplier or "None": ')
     if not is_player(supp) and supp != 'None':
         return 'Not a valid player.'
     elif supp != 'None':
@@ -228,17 +287,17 @@ def get_guess():
     else:
         supp = None
 
-    card_shown = input('Card Shown: ') or None
+    card_shown = get_input('Card Shown: ').title() or None
     if card_shown is not None and not is_card(card_shown):
         return f'{card_shown} is not a recognized card.'
 
-    new_guess = Guess(*g_cards, supp, card_shown)
+    new_guess = Guess(guesser, *g_cards, supp, card_shown)
 
     guesser.guess(new_guess)
     return card_statuses
 
 
-def print_statuses():
+def print_statuses() -> None:
     print('\nCulprits:')
     for card in (culprit_cards):
         print(f'{card}: {card_statuses[card]}')
@@ -254,19 +313,23 @@ def print_statuses():
     print('')
 
 
-def main():
-    run = True
+def main() -> None:
     global players
     players = setup()
     print('\n')
+    main_loop()
+
+
+def main_loop():
+    run = True
     while run:
         guess_return_value = get_guess()
         if type(guess_return_value) == OrderedDict:
             print_statuses()
-            print(f'File Contents:\n'
-                  f'Culprit: {true_culprit}\n'
-                  f'Weapon: {true_weapon}\n'
-                  f'Room: {true_room}')
+            print('File Contents:\n'
+                 f'Culprit: {true_culprit}\n'
+                 f'Weapon: {true_weapon}\n'
+                 f'Room: {true_room}')
         else:
             print(guess_return_value)
         print('')
