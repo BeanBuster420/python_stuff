@@ -135,7 +135,7 @@ class Player:
 
         if supplier_index != (guesser_index + 1) % len(players):
             skipped_players = []
-            next_player_index = guesser_index + 1
+            next_player_index = (guesser_index + 1) % len(players)
             while next_player_index != supplier_index:
                 skipped_players.append(players[next_player_index])
                 next_player_index = (next_player_index + 1) % len(players)
