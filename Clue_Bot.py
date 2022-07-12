@@ -18,7 +18,7 @@ commands = ('help', 'show')
 help_command = '''
 List of valid commands:
 
-"help" - Prints the string you are reading right now.
+"help" - Provides uses and syntax for all valid commands.
 
 "show" - Used to show guesses, players, or cards.
 Syntax: "show players|guesses|cards"
@@ -35,7 +35,7 @@ card_statuses = OrderedDict()
 def execute_command(command: str) -> None:
     base_command, *args = command.split(' ')
     if base_command == 'help':
-        pass
+        print(help_command)
 
     if base_command == 'show':
         if args[0] == 'guesses':
