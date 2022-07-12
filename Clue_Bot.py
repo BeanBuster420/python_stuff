@@ -43,7 +43,7 @@ def execute_command(command: str) -> None:
                 print(index, guess)
             print('')
         elif args[0] == 'players':
-            print(f'Players: {", ".join(players)}')
+            print(f'Players: {", ".join(p.player_name for p in players)}')
         elif args[0] == 'cards':
             print_statuses()
 
@@ -106,7 +106,7 @@ class Player:
     def __str__(self) -> str:
         return self.player_name
 
-    def guess(self, guess: 'Guess') -> bool | None:
+    def guess(self, guess: 'Guess') -> Union[bool, None]:
         self.guesses.append(guess)
 
         if guess.supplier == None:
@@ -264,7 +264,7 @@ def setup() -> list:
     return players
 
 
-def get_guess() -> OrderedDict | str:
+def get_guess() -> Union[OrderedDict, str]:
     guesser = get_input('Guesser: ')
     if not is_player(guesser):
         return 'Not a valid player.'
